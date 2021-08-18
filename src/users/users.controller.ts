@@ -6,15 +6,21 @@ import {
   Param,
   Delete,
   Put,
-  UseGuards,
   CACHE_MANAGER,
   Inject,
+  UseInterceptors,
+  UploadedFile,
+  Header,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import * as bcrypt from 'bcrypt';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @Controller('api/users')
 export class UsersController {
@@ -25,10 +31,10 @@ export class UsersController {
 
   // @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll() {
-    await this.cacheManager.set('users', [1, 2, 3, 4, 5]);
-    const value = await this.cacheManager.get('users');
-    console.log(value);
+  findAll() {
+    // await this.cacheManager.set('users', [1, 2, 3, 4, 5]);
+    // const value = await this.cacheManager.get('users');
+    // console.log(value);
     return this.usersService.findAll();
   }
 
@@ -56,5 +62,36 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @Post('photo')
+  @UseInterceptors(FileInterceptor('image', { dest: './src/assets' }))
+  @Header('Accept', 'multipart/form-data')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  uploadUserPhoto(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
+    return this.usersService.uploadUserPhoto({
+      name: file.originalname,
+      url: file.path,
+      userId: '1231231231',
+    });
+  }
+
+  @Get('photo/:id')
+  getProfilePicture(@Param('id') id: string, @Res() res) {
+    return res.sendFile(id, {
+      root: './src/assets',
+    });
   }
 }

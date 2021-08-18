@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { Photo } from './entities/photo.entity';
+import { UploadPhotoDto } from './dto/upload-photo.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +25,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Photo)
+    private photoRepository: Repository<Photo>,
   ) {}
 
   create(createUserDto: CreateUserDto) {
@@ -48,5 +52,9 @@ export class UsersService {
 
   findByEmail(email: string) {
     return this.usersRepository.findOne({ email });
+  }
+
+  uploadUserPhoto(entity: UploadPhotoDto) {
+    return this.photoRepository.insert(entity);
   }
 }
